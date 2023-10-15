@@ -52,7 +52,7 @@ void setgdb(int c)
 	if(_setgdb(c))
 		puts("设置成功!");
 	else
-		printf("设置失败!无法打开文件 : %s\n", gdbpath);
+		printf("设置失败 : 无法打开文件 : %s\n", gdbpath);
 }
 
 // 选择gdb模式
