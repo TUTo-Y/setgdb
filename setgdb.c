@@ -1,59 +1,75 @@
 #include <stdio.h>
 #include <string.h>
-char gdbstr0[]		= { "source ~/pwn/peda/peda.py" };
-char gdbstr1[]		= { "source ~/pwn/pwndbg/gdbinit.py" };
+
+/* gdb插件配置 */
+struct
+{
+	char path[256];	// 插件目录
+	char name[64];	// 插件名
+}gdb[] = {
+	"~/pwn/pwndbg/gdbinit.py",	"pwndbg",
+	"~/pwn/peda/peda.py",		"peda",
+	"~/pwn/gef/gef.py",			"gef"
+};
+
+int select_n = sizeof(gdb) / (256 + 64);
+
+/* gdb配置目录 */
+const char gdbpath[] = { "/home/tuto/.gdbinit" };
 
 /**
  * \brief 设置~/.gdbinit
  * 
- * \param select 0默认 1pwndbg 2peda
+ * \param select 0为默认, 然后依次按照顺序选择
  * 
  * \return 0设置失败, 1设置成功
 */
-int setgdb(int select)
+int _setgdb(int select)
 {
+	int i = 0;
 	FILE *file = NULL;
 
 	// 打开文件
-	file = fopen( "/home/tuto/.gdbinit", "w");
-	if(file == NULL)
+	if( !( file = fopen( gdbpath, "w") ) )
 		return 0;
-
-	switch(select)
+	
+	// 配置gdb
+	for(int i = 1; i <= select_n; i++)
 	{
-		// 默认gdb
-		case 0:
-			fprintf(file, "#%s%c#%s%c", gdbstr0, 10, gdbstr1, 10);
-			break;
-		// pwndbg
-		case 1:
-			fprintf(file, "#%s%c%s%c", gdbstr0, 10, gdbstr1, 10);
-			break;
-		// peda
-		case 2:
-			fprintf(file, "%s%c#%s%c", gdbstr0, 10, gdbstr1, 10);
-			break;
+		if(i == select)
+			fprintf(file, "source %s\n", gdb[i-1].path);
+		else
+			fprintf(file, "#source %s\n", gdb[i-1].path);
 	}
 
 	fclose(file);
 	return 1;
 }
 
+// 运行setgdb
+void setgdb(int c)
+{
+	if(_setgdb(c))
+		puts("设置成功!");
+	else
+		printf("设置失败!无法打开文件 : %s\n", gdbpath);
+}
+
 // 选择gdb模式
 void select()
 {
-	unsigned int c = 0;
+	unsigned int c = 0, i = 0;
 	puts("请选择要设置的gdb:");
 	puts("输入 0 设置为默认gdb");
-	puts("输入 1 设置为pwndbg");
-	puts("输入 2 设置为peda");
-	puts("输入 3 退出");
+	for(i = 1; i <= select_n; i++)
+		printf("输入 %d 设置为%s\n", i, gdb[i-1].name);
+	printf("输入 %d 退出\n请输入 : ", i);
 	scanf("%d", &c);
 
 	// 检测输入
-	if(c == 3)
+	if(c == i)
 		return;
-	else if(c > 2)
+	else if(c > i)
 	{
 		printf("无法识别命令 %d 请重新输入!\n", c);
 		select();
@@ -61,10 +77,7 @@ void select()
 	}
 
 	// 设置
-	if(setgdb(c))
-		puts("设置成功!");
-	else
-		puts("设置失败!");
+	setgdb((int)c);
 }
 
 
@@ -78,24 +91,18 @@ int main(int argc, char **argv)
 		select();
 	else if(argc == 2)
 	{
+		int i = 0;
 		if(!strcmp("gdb", argv[1]))
-			if(setgdb(0))
-				puts("设置成功!");
-			else
-				puts("设置失败!");
-
-		else if(!strcmp("pwndbg", argv[1]))
-			if(setgdb(1))
-				puts("设置成功!");
-			else
-				puts("设置失败!");
-
-		else if(!strcmp("peda", argv[1]))
-			if(setgdb(2))
-				puts("设置成功!");
-			else
-				puts("设置失败!");
+			setgdb(0);
 		else
+			for(; i < select_n; i++)
+				if(!strcmp(gdb[i].name, argv[1]))
+				{
+					setgdb(i + 1);
+					break;
+				}
+
+		if(i == select_n)
 		{
 			puts("未知参数!");
 			select();
