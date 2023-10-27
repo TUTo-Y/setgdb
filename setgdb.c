@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 /* gdb插件配置 */
@@ -15,7 +16,7 @@ struct
 int select_n = sizeof(gdb) / (256 + 64);
 
 /* gdb配置目录 */
-const char gdbpath[] = { "/home/tuto/.gdbinit" };
+char gdbpath[256] = { 0 };
 
 /**
  * \brief 设置~/.gdbinit
@@ -56,7 +57,7 @@ void setgdb(int c)
 }
 
 // 选择gdb模式
-void select()
+void selectgdb()
 {
 	unsigned int c = 0, i = 0;
 	puts("请选择要设置的gdb:");
@@ -72,7 +73,7 @@ void select()
 	else if(c > i)
 	{
 		printf("无法识别命令 %d 请重新输入!\n", c);
-		select();
+		selectgdb();
 		return;
 	}
 
@@ -83,12 +84,16 @@ void select()
 
 int main(int argc, char **argv)
 {
+	// 设置.gdbinit目录
+	strcpy(gdbpath, getenv("HOME"));
+	strcat(gdbpath, "/.gdbinit");
+	
 	// 判断是几个参数
 	// 如果是一个参数, 提示选择
 	// 如果是两个参数, 直接设置
 	// 如果是三个及其以上, 那么当作只有一个参数
 	if(argc == 1)
-		select();
+		selectgdb();
 	else if(argc == 2)
 	{
 		int i = 0;
@@ -105,13 +110,13 @@ int main(int argc, char **argv)
 		if(i == select_n)
 		{
 			puts("未知参数!");
-			select();
+			selectgdb();
 		}
 	}
 	else
 	{
 		puts("未知参数!");
-		select();
+		selectgdb();
 	}
 	
 	return 0;
