@@ -2,18 +2,32 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 /* gdb插件配置 */
-struct
+struct _gdb
 {
-	char path[256];	// 插件目录
-	char name[64];	// 插件名
+	char enable[256];	// 启用插件
+	char disable[256];	// 禁用插件
+	char name[64];		// 插件名
 }gdb[] = {
-	"~/pwn/pwndbg/gdbinit.py",	"pwndbg",
-	"~/pwn/peda/peda.py",		"peda",
-	"~/pwn/gef/gef.py",			"gef"
+	{
+		"source ~/pwn/pwndbg/gdbinit.py\nsource ~/pwn/Pwngdb/pwngdb.py\nsource ~/pwn/Pwngdb/angelheap/gdbinit.py\n",
+		"# source ~/pwn/pwndbg/gdbinit.py\n# source ~/pwn/Pwngdb/pwngdb.py\n# source ~/pwn/Pwngdb/angelheap/gdbinit.py\n",
+		"pwndbg"
+	},
+	{
+		"source ~/pwn/peda/peda.py\n",
+		"# source ~/pwn/peda/peda.py\n",
+		"peda",
+	},
+	{
+		"source ~/pwn/gef/gef.py\n",
+		"# source ~/pwn/gef/gef.py\n",
+		"gef"
+	}
 };
 
-int select_n = sizeof(gdb) / (256 + 64);
+int select_n = sizeof(gdb) / sizeof(struct _gdb);
 
 /* gdb配置目录 */
 char gdbpath[256] = { 0 };
@@ -37,10 +51,10 @@ int _setgdb(int select)
 	// 配置gdb
 	for(int i = 1; i <= select_n; i++)
 	{
-		if(i == select)
-			fprintf(file, "source %s\n", gdb[i-1].path);
-		else
-			fprintf(file, "#source %s\n", gdb[i-1].path);
+		if(i == select)	// 启用插件
+			fwrite(gdb[i-1].enable, strlen(gdb[i-1].enable), 1, file);
+		else			// 禁用插件
+			fwrite(gdb[i-1].disable, strlen(gdb[i-1].disable), 1, file);
 	}
 
 	fclose(file);
